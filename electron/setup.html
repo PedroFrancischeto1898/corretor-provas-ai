@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    />
+
+    <title>Configurar Corretor de Provas</title>
+
+    <style>
+        * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: Arial, sans-serif;
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+
+    .card {
+        width: 520px;
+        max-width: calc(100vw - 40px);
+        background: white;
+        padding: 32px;
+        border-radius: 18px;
+        box-shadow:
+            0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+        margin-top: 0;
+        margin-bottom: 8px;
+    }
+
+    p {
+        color: #475569;
+        line-height: 1.5;
+    }
+
+    label {
+        display: block;
+        margin-top: 24px;
+        margin-bottom: 8px;
+        font-weight: bold;
+    }
+
+    input {
+        width: 100%;
+        padding: 13px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-size: 15px;
+    }
+
+    button {
+        width: 100%;
+        margin-top: 20px;
+        padding: 14px;
+        border: 0;
+        border-radius: 10px;
+        background: #2563eb;
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    #message {
+        margin-top: 14px;
+        font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>Corretor de Provas</h1>
+
+    <p>
+        Esta configuração é necessária
+        apenas na primeira utilização.
+    </p>
+
+    <p>
+        Informe a chave da API OpenAI.
+        Ela será protegida localmente
+        pelo Windows e não ficará gravada
+        em texto aberto.
+    </p>
+
+    <label for="apiKey">
+        Chave da API OpenAI
+    </label>
+
+    <input
+        id="apiKey"
+        type="password"
+        placeholder="sk-..."
+        autocomplete="off"
+    />
+
+    <button id="saveButton">
+        Salvar e abrir aplicativo
+    </button>
+
+    <div id="message"></div>
+    </div>
+
+    <script>
+        const input =
+        document.getElementById("apiKey");
+
+    const button =
+        document.getElementById(
+            "saveButton"
+        );
+
+    const message =
+        document.getElementById(
+            "message"
+        );
+
+    button.addEventListener(
+        "click",
+        async () => {
+            const apiKey =
+            input.value.trim();
+
+        if (!apiKey) {
+            message.textContent =
+                "Informe a chave da API.";
+
+            return;
+        }
+
+        button.disabled = true;
+
+        message.textContent =
+            "Salvando...";
+
+        try {
+            const result =
+                await window
+                .electronSetup
+                .saveApiKey(apiKey);
+
+            if (!result.success) {
+                throw new Error(
+                result.error
+                );
+            }
+
+            message.textContent =
+                "Configuração concluída.";
+            } catch (error) {
+            message.textContent =
+                error.message ??
+                "Não foi possível salvar a chave.";
+
+            button.disabled = false;
+            }
+        }
+        );
+    </script>
+</body>
+</html>
