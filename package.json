@@ -1,6 +1,6 @@
 {
   "name": "corretor-provas",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "productName": "Corretor de Provas",
   "main": "electron/main.cjs",
