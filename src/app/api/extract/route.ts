@@ -143,8 +143,17 @@ export async function POST(request: Request) {
 
         const dataUrl = `data:${image.type};base64,${base64}`;
 
+        const model = process.env.EXTRACTION_MODEL ?? "gpt-6-luna";
+        if (model !== "gpt-6-luna" && model !== "gpt-5.6-luna") {
+            return NextResponse.json(
+                { success: false, error: "Modelo de identificação inválido." },
+                { status: 500 }
+            );
+        }
+
         const response = await openai.responses.create({
-            model: "gpt-5.6-luna",
+            model,
+            store: false,
 
             reasoning: {
                 effort: "none",
@@ -240,6 +249,21 @@ export async function POST(request: Request) {
 
             max_output_tokens: 1200,
         });
+
+        console.info("[api-usage]", JSON.stringify({
+            stage: "extraction",
+            model,
+            effort: "none",
+            status: response.status,
+            usage: response.usage,
+        }));
+
+        if (response.status === "incomplete" || !response.output_text) {
+            return NextResponse.json(
+                { success: false, error: "A identificação da prova não foi concluída." },
+                { status: 502 }
+            );
+        }
 
         const result = JSON.parse(response.output_text);
 
