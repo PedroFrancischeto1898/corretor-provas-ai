@@ -55,9 +55,7 @@ export function CriteriaList({
 
                 <div className="md:text-right">
                     <p className="text-sm font-semibold text-blue-700">
-                    {getStatusLabel(
-                        criterion.status
-                    )}
+                    {getStatusLabel(criterion.status)} · {criterion.expectedCount!==null ? `${Math.min(criterion.validCount??0,criterion.expectedCount)} de ${criterion.expectedCount} itens` : `${criterion.attainmentPercent.toFixed(0)}%`}
                     </p>
 
                     <p className="text-sm text-slate-500">
@@ -76,6 +74,14 @@ export function CriteriaList({
                 <p className="mt-2 text-sm leading-6 text-slate-700">
                 {criterion.analysis}
                 </p>
+                <details className="mt-2 text-sm text-slate-700">
+                    <summary className="cursor-pointer font-medium text-blue-700">Fundamentos da avaliação</summary>
+                    {criterion.decisionDescription && <p className="mt-2 font-semibold">Descritor selecionado: {criterion.decisionDescription}</p>}
+                    {criterion.upperPercent!==null && criterion.upperPercent!==criterion.attainmentPercent && <p>Intervalo possível: {criterion.attainmentPercent}–{criterion.upperPercent}% (revisão necessária).</p>}
+                    {criterion.decisionRationale && <p className="mt-2">Fundamentação do nível: {criterion.decisionRationale}</p>}
+                    {(criterion.competenceAudit??[]).map((line,index)=><p key={index} className="mt-2">{line}</p>)}
+                    {[{title:"Evidências",items:criterion.evidence},{title:"Lacunas relevantes",items:criterion.gaps},{title:"Equívocos conceituais",items:criterion.errors}].filter(section=>section.items.length>0).map(section=><div className="mt-2" key={section.title}><p className="font-semibold">{section.title}</p><ul className="list-disc pl-5">{section.items.map((item,index)=><li key={index}>{item}</li>)}</ul></div>)}
+                </details>
             </div>
             ))}
         </div>

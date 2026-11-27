@@ -81,7 +81,7 @@ function createCriterionParagraphs(
                 text:
                 `${getStatusLabel(
                     criterion.status
-                )} — ${criterion.awardedPoints.toFixed(
+                )} · ${criterion.expectedCount!==null ? `${Math.min(criterion.validCount??0,criterion.expectedCount)} de ${criterion.expectedCount} itens` : `${criterion.attainmentPercent.toFixed(0)}%`} — ${criterion.awardedPoints.toFixed(
                     2
                 )} / ${criterion.maxPoints.toFixed(
                     2
@@ -98,6 +98,10 @@ function createCriterionParagraphs(
             after: 120,
             },
         }),
+        ...(criterion.decisionDescription?[new Paragraph({text:"Descritor selecionado: "+criterion.decisionDescription})]:[]),
+        ...(criterion.decisionRationale?[new Paragraph({text:"Fundamentação do nível: "+criterion.decisionRationale})]:[]),
+        ...(criterion.competenceAudit??[]).map(line=>new Paragraph({text:line})),
+        ...(criterion.upperPercent!==null && criterion.upperPercent!==criterion.attainmentPercent?[new Paragraph({text:`Intervalo possível: ${criterion.attainmentPercent}–${criterion.upperPercent}%`})]:[]),
         ]
     );
 }
@@ -163,7 +167,7 @@ function createStudentSection(
     new Paragraph({
         children: [
             new TextRun({
-            text: "Nota: ",
+            text: result.score===null ? "Nota provisória (revisão necessária): " : "Nota: ",
             bold: true,
         }),
 
@@ -184,7 +188,7 @@ function createStudentSection(
                 children: [
                 new TextRun({
                     text:
-                    "Revisão humana recomendada",
+                    "Revisão humana necessária",
                     bold: true,
                 }),
                 ],

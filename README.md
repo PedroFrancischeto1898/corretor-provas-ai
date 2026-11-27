@@ -12,6 +12,8 @@ Built with Next.js, TypeScript, Electron and the OpenAI API, the application hel
 
 ## Preview
 
+Screenshots illustrate the earlier interface; the 0.2.2 source adds a reference-confirmation stage and richer grading explanations.
+
 <p align="center">
   <img src="./docs/screenshots/08-grading-results.png"
        alt="Corretor de Provas grading results"
@@ -186,6 +188,8 @@ Student/page grouping
     ↓
 Human review
     ↓
+Shared reference approval
+    ↓
 Multimodal grading
     ↓
 Criterion classification
@@ -211,7 +215,8 @@ flowchart TD
     D --> E[Identification / Extraction]
     E --> F[Page Grouping]
     F --> G[Human Review]
-    G --> H[Grading Pipeline]
+    G --> R[Shared reference approval]
+    R --> H[Grading Pipeline]
     H --> I[Structured AI Classification]
     I --> J[Deterministic Scoring Engine]
     J --> K[Results Interface]
@@ -255,42 +260,11 @@ For a detailed description of the system design, processing pipelines, security 
 
 ## Main Engineering Decisions
 
-### AI interprets criteria, but does not calculate the grade
+The 0.2.2 source version prepares a shared assessment reference for teacher approval before grading. It distinguishes count-based criteria (valid distinct items, proportional credit) from qualitative criteria (0, 25, 50, 65, 75, 90, 100 percent, unless explicit teacher rules provide an exception). Each qualitative reference defines the core competence, sufficient evidence, mandatory complementary requirements and their maximum impact, and optional enrichment.
 
-One of the most important design decisions was to separate semantic interpretation from numerical scoring.
+The model identifies evidence and limitations, judges sufficiency and impact, and selects an approved descriptor. Application code checks structural compatibility and calculates points in integer cents, preserving rubric weights. Inconsistent judgments are provisional and require human review. The checks do not guarantee semantic correctness.
 
-The model classifies each rubric criterion into one of five levels:
-
-```text
-fully_met
-mostly_met
-partially_met
-minimally_met
-not_met
-```
-
-The application converts these classifications into scores deterministically.
-
-The current mapping is:
-
-| Classification | Factor |
-|---|---:|
-| `fully_met` | 1.00 |
-| `mostly_met` | 0.75 |
-| `partially_met` | 0.50 |
-| `minimally_met` | 0.25 |
-| `not_met` | 0.00 |
-
-Therefore:
-
-```text
-criterion score =
-criterion weight × classification factor
-```
-
-The final score is calculated by application code, not by the language model.
-
-This separation improves predictability and keeps rubric weights under direct application control.
+See [release notes](CHANGELOG.md) and [grading design](docs/grading-v0.2.2.md).
 
 ---
 
@@ -447,15 +421,7 @@ Early versions used a simpler performance scale.
 
 During testing, it proved too coarse to represent meaningful differences between student responses.
 
-The system evolved to five levels, allowing better distinction between:
-
-- complete fulfillment;
-- minor limitations;
-- substantial gaps;
-- superficial mentions;
-- absence of fulfillment.
-
-The grading prompt was also calibrated to avoid both excessive leniency and artificial strictness.
+Version 0.2.2 introduces seven qualitative levels, approved shared references and explicit sufficiency and limitation-impact checks. Teacher oversight remains necessary.
 
 ---
 

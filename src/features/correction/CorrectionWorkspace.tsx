@@ -6,6 +6,7 @@ import { useCorrectionFlow } from "./hooks/useCorrectionFlow";
 import { GroupingStage } from "./components/grouping/GroupingStage";
 import { GradingStage } from "./components/GradingStage";
 import { ResultsStage } from "./components/ResultsStage";
+import { ReferenceReview } from "./components/ReferenceReview";
 
 export function CorrectionWorkspace() {
     const flow = useCorrectionFlow();
@@ -23,13 +24,13 @@ export function CorrectionWorkspace() {
             onAssignPage={
                 flow.grouping.assignPage
             }
-            onConfirm={flow.confirmAndGrade}
+            onConfirm={flow.prepareAndReview}
             onConfirmIdentity={
                 flow.grouping
                     .confirmGroupIdentity
             }
             loading={
-                flow.isGrading
+                flow.isPreparing
             }
 
             error={
@@ -41,6 +42,11 @@ export function CorrectionWorkspace() {
             }
             />
         );
+    }
+
+    if (flow.stage === "reference" && flow.reference) {
+        return <ReferenceReview reference={flow.reference} rubric={flow.batchRubric} loading={flow.isGrading}
+            error={flow.error} onBack={flow.returnToReview} onEdit={flow.returnToSetup} onConfirm={flow.confirmAndGrade}/>;
     }
 
     if (flow.stage === "grading") {
@@ -57,7 +63,7 @@ export function CorrectionWorkspace() {
         return (
             <ResultsStage
             assessmentName={
-                flow.correction.assessmentName
+                flow.batchAssessmentName
             }
             results={
                 flow.grading.results

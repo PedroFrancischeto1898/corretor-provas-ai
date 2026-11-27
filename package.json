@@ -1,6 +1,6 @@
 {
   "name": "corretor-provas",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "productName": "Corretor de Provas",
   "main": "electron/main.cjs",
@@ -12,6 +12,7 @@
     "start": "next start",
     "start:standalone": "node .next/standalone/server.js",
     "lint": "eslint",
+    "test:grading": "node --test tests/grading-*.test.mjs",
     "desktop": "npm run build && electron .",
     "package:desktop": "npm run build && electron-builder --dir && node scripts/copy-standalone.cjs",
     "make:desktop": "npm run build && electron-builder --dir && node scripts/copy-standalone.cjs && electron-builder --prepackaged dist-desktop/win-unpacked --win nsis"

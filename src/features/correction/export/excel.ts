@@ -38,6 +38,7 @@ export function exportResultsToExcel(
             )
         );
 
+    const count=Math.max(0,...sortedResults.map(item=>item.data.criteriaAnalysis.length));
     const rows =
         sortedResults.map(
         (item) => ({
@@ -48,39 +49,11 @@ export function exportResultsToExcel(
             item.data.registration ??
             "",
 
-            C1:
-            getCriterionScore(
-                item,
-                0
-            ),
+            ...Object.fromEntries(Array.from({length:count},(_,i)=>["C"+(i+1),getCriterionScore(item,i)])),
 
-            C2:
-            getCriterionScore(
-                item,
-                1
-            ),
+            "Nota final": item.data.score ?? "",
 
-            C3:
-            getCriterionScore(
-                item,
-                2
-            ),
-
-            C4:
-            getCriterionScore(
-                item,
-                3
-            ),
-
-            C5:
-            getCriterionScore(
-                item,
-                4
-            ),
-
-            "Nota final":
-            item.data.score ??
-            item.data.provisionalScore,
+            "Nota provisória": item.data.score===null ? item.data.provisionalScore : "",
 
             "Nota máxima":
             item.data.maxScore,
@@ -107,13 +80,10 @@ export function exportResultsToExcel(
     worksheet["!cols"] = [
         { wch: 35 },
         { wch: 16 },
-        { wch: 10 },
-        { wch: 10 },
-        { wch: 10 },
-        { wch: 10 },
-        { wch: 10 },
+        ...Array.from({length:count},()=>({wch:10})),
         { wch: 14 },
         { wch: 14 },
+        { wch: 16 },
         { wch: 18 },
         { wch: 12 },
     ];

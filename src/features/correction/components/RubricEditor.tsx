@@ -149,8 +149,8 @@ function RubricCriterionRow({
 
             <input
                 type="number"
-                min="0.1"
-                step="0.1"
+                min="0.01"
+                step="0.01"
                 value={criterion.points}
                 onChange={(event) =>
                 onUpdate(

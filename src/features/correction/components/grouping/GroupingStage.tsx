@@ -46,6 +46,7 @@ export function GroupingStage({
             <button
             type="button"
             onClick={onBack}
+            disabled={loading}
             className="mb-4 text-sm font-semibold text-blue-700"
             >
             ← Voltar à configuração
@@ -82,10 +83,10 @@ export function GroupingStage({
                         aria-hidden="true"
                     />
 
-                        Iniciando correção...
+                        Preparando critérios...
                     </span>
                 ) : (
-                    "Confirmar organização e corrigir"
+                    "Confirmar organização e preparar critérios"
                 )}
             </button>
             </div>

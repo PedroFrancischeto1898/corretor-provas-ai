@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    // Artefatos gerados pelo empacotamento Electron (não são código-fonte).
+    "dist-desktop/**",
     "next-env.d.ts",
   ]),
 ]);

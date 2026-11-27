@@ -26,7 +26,8 @@ flowchart TD
     E --> F[Student & Page Grouping]
     F --> G[Human Review]
 
-    G --> H[Grading Pipeline]
+    G --> R[Reference preparation and approval]
+    R --> H[Grading Pipeline]
 
     H --> I[Structured AI Classification]
     I --> J[Deterministic Scoring Engine]
@@ -87,7 +88,8 @@ flowchart LR
 
     E --> F[Student exam group]
 
-    F --> G[Grading request]
+    F --> R[Shared reference approval]
+    R --> G[Grading request]
 
     G --> H[Criterion classifications]
 
@@ -210,89 +212,13 @@ This operation is performed locally and does not require another AI request.
 
 ## 7. Stage 3 — Grading
 
-After grouping has been confirmed, all pages belonging to the same student are evaluated together.
-
-```mermaid
-flowchart TD
-    A[Confirmed student group]
-
-    --> B[All exam pages]
-
-    B --> C[Rubric + grading guidance]
-
-    C --> D[Multimodal grading request]
-
-    D --> E[Structured criterion classifications]
-```
-
-The AI does **not** directly determine the numerical grade.
-
-Instead, it assigns one status to each rubric criterion:
-
-```text
-fully_met
-mostly_met
-partially_met
-minimally_met
-not_met
-```
-
-It also produces:
-
-- criterion analysis
-- strengths
-- areas for improvement
-- grading confidence
-- human-review indication
-
----
+After grouping, one shared reference is prepared from the rubric and teacher guidance, then reviewed before grading. The reference distinguishes count and qualitative criteria, and defines competence, sufficiency, complementary requirements, optional detail and descriptors. A hash binds it to the source inputs. Each grouped answer is evaluated against that reference. The model returns valid distinct items or a descriptor ID, evidence, gaps, errors, sufficiency and impact assessments.
 
 ## 8. Deterministic Scoring
 
-One of the main architectural decisions is the separation between:
+Count criteria receive proportional credit up to the approved count. Standard qualitative descriptors have fixed percentages: 0, 25, 50, 65, 75, 90 and 100. Explicit teacher exceptions take precedence. Application code checks judgment compatibility, calculates criterion points in cents and sums them. Contradictions or material uncertainty yield provisional scores, not automatic changes to the selected level. Structural consistency does not prove semantic validity.
 
-```text
-AI interpretation
-        ↓
-criterion status
-        ↓
-application scoring
-```
-
-The application maps criterion status to a fixed factor:
-
-| Status | Factor |
-|---|---:|
-| `fully_met` | 1.00 |
-| `mostly_met` | 0.75 |
-| `partially_met` | 0.50 |
-| `minimally_met` | 0.25 |
-| `not_met` | 0.00 |
-
-For a criterion worth `P` points:
-
-```text
-awardedPoints = P × statusFactor
-```
-
-The final score is:
-
-```text
-finalScore = Σ awardedPoints
-```
-
-This calculation occurs in application code.
-
-### Why this matters
-
-Allowing the language model to directly choose a final numerical grade would make the scoring process less predictable.
-
-By separating semantic evaluation from arithmetic scoring:
-
-- rubric weights remain authoritative
-- the scoring formula is inspectable
-- identical classifications produce identical scores
-- numerical calculation does not depend on model behavior
+See [grading design](grading-v0.2.2.md).
 
 ---
 
@@ -490,6 +416,7 @@ src/
 ├── app/
 │   └── api/
 │       ├── extract/
+│       ├── prepare-reference/
 │       └── grade/
 │
 ├── features/

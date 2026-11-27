@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { PreparedReference } from "../types";
 
 import { useCorrectionBatch } from "./useCorrectionBatch";
 import { useCorrectionForm } from "./useCorrectionForm";
@@ -27,7 +28,7 @@ import {
     const [error, setError] =
         useState("");
 
-    async function submitCorrection() {
+    async function submitCorrection(reference: PreparedReference) {
         const validationError =
         validateCorrection({
             assessmentName:
@@ -62,6 +63,7 @@ import {
 
         rubric:
             rubricState.rubric,
+        reference,
         });
     }
 

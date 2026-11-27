@@ -12,6 +12,8 @@ Desenvolvido com Next.js, TypeScript, Electron e OpenAI API, o sistema auxilia p
 
 ## Prévia
 
+As capturas ilustram a interface anterior; o código 0.2.2 acrescenta a conferência da referência e justificativas mais detalhadas.
+
 <p align="center">
   <img src="./docs/screenshots/08-grading-results.png"
        alt="Resultados da correção no Corretor de Provas"
@@ -186,6 +188,8 @@ Agrupamento por estudante
         ↓
 Revisão humana
         ↓
+Conferência da referência
+        ↓
 Correção multimodal
         ↓
 Classificação dos critérios
@@ -211,7 +215,8 @@ flowchart TD
     D --> E[Identificação / Extração]
     E --> F[Agrupamento de páginas]
     F --> G[Revisão humana]
-    G --> H[Pipeline de correção]
+    G --> R[Conferência da referência]
+    R --> H[Pipeline de correção]
     H --> I[Classificação estruturada por IA]
     I --> J[Motor de pontuação determinístico]
     J --> K[Interface de resultados]
@@ -255,42 +260,11 @@ Para uma descrição detalhada das decisões arquiteturais, pipelines de process
 
 ## Principais decisões de engenharia
 
-### A IA interpreta os critérios, mas não calcula a nota
+A versão 0.2.2 do código prepara uma referência comum para conferência docente antes da correção. Critérios de contagem recebem crédito proporcional por itens válidos distintos; critérios qualitativos utilizam 0, 25, 50, 65, 75, 90 e 100%, salvo regras docentes explícitas. A referência define núcleo, suficiência, exigências complementares obrigatórias e impacto máximo, além de aprofundamentos opcionais.
 
-Uma das decisões mais importantes do projeto foi separar a interpretação semântica da pontuação numérica.
+A IA identifica evidências e limitações, julga suficiência e materialidade e seleciona um descritor aprovado. O código verifica compatibilidade estrutural e calcula os pontos em centésimos, preservando os pesos. Inconsistências mantêm a nota provisória e exigem revisão. As verificações não garantem acerto semântico.
 
-O modelo classifica cada critério em um dos cinco níveis:
-
-```text
-fully_met
-mostly_met
-partially_met
-minimally_met
-not_met
-```
-
-O software converte essas classificações em pontuação de forma determinística.
-
-A lógica utilizada atualmente é:
-
-| Classificação | Fator |
-|---|---:|
-| `fully_met` | 1,00 |
-| `mostly_met` | 0,75 |
-| `partially_met` | 0,50 |
-| `minimally_met` | 0,25 |
-| `not_met` | 0,00 |
-
-Assim:
-
-```text
-pontuação do critério =
-peso do critério × fator da classificação
-```
-
-A nota final é calculada pelo código da aplicação, e não pelo modelo de linguagem.
-
-Essa separação aumenta a previsibilidade do sistema e mantém os pesos da rubrica sob controle da aplicação.
+Veja as [notas da versão](CHANGELOG.md) e a [documentação do método](docs/grading-v0.2.2.md).
 
 ---
 
@@ -447,15 +421,7 @@ As primeiras versões utilizavam uma escala de desempenho mais simples.
 
 Durante os testes, ela se mostrou pouco sensível às diferenças entre respostas.
 
-O sistema evoluiu para cinco níveis, permitindo distinguir melhor:
-
-- atendimento integral;
-- pequenas limitações;
-- lacunas relevantes;
-- menções superficiais;
-- ausência de atendimento.
-
-O prompt também foi calibrado para evitar tanto excesso de leniência quanto rigor artificial.
+A versão 0.2.2 introduz sete níveis qualitativos, referência comum aprovada e verificação explícita de suficiência e materialidade. A supervisão docente continua necessária.
 
 ---
 

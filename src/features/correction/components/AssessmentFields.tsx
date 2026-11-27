@@ -45,12 +45,13 @@ export function AssessmentFields({
             className="mb-2 block font-semibold text-slate-800"
             >
             Orientações gerais /
-            gabarito
+            gabarito e enunciado da questão
             </label>
 
             <textarea
             id="criteria"
             rows={8}
+            placeholder="Cole o enunciado, o gabarito e as orientações da questão que será corrigida."
             value={criteria}
             onChange={(event) =>
                 onCriteriaChange(

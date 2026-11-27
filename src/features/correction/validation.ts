@@ -31,11 +31,13 @@ export function validateCorrection(
             !Number.isFinite(
                 criterion.points
             ) ||
-            criterion.points <= 0
+            criterion.points < 0.01 ||
+            !Number.isSafeInteger(Math.round(criterion.points*100)) ||
+            Math.abs(criterion.points*100-Math.round(criterion.points*100))>=1e-7
         );
 
     if (invalidCriterion) {
-        return "Preencha todos os critérios e suas pontuações.";
+        return "Preencha todos os critérios com pontuações positivas de até duas casas decimais.";
     }
 
     if (data.files.length === 0) {

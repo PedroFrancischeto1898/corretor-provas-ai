@@ -1,0 +1,20 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {resolveDecisionPlan,validateDecisionPlan,buildDecisionPlan,STANDARD_LEVELS} from "../src/lib/grading/decision-core.mjs";
+import {plan,level,judge} from "./fixtures/structured-decision.mjs";
+test("todos os níveis, inclusive 65 e 90, são diretamente selecionáveis",()=>{for(const p of [0,25,50,65,75,90,100])assert.equal(resolveDecisionPlan(plan,judge(p)).percent,p)});
+test("incerteza material gera intervalo",()=>assert.deepEqual([resolveDecisionPlan(plan,judge(65,90)).percent,resolveDecisionPlan(plan,judge(65,90)).upperPercent,resolveDecisionPlan(plan,judge(65,90)).needsReview],[65,90,true]));
+test("seleção inequívoca não gera revisão",()=>assert.equal(resolveDecisionPlan(plan,judge(100)).needsReview,false));
+test("rejeita níveis inexistentes e limites inválidos",()=>{for(const j of [judge(60),judge(75,65),judge(75,75),judge(75,99),{...judge(75),rationale:""},{...judge(75),upperLevelId:undefined}])assert.throws(()=>resolveDecisionPlan(plan,j))});
+test("percentual livre não altera a classificação",()=>assert.equal(resolveDecisionPlan(plan,{...judge(65),percent:100}).percent,65));
+test("planos inválidos",()=>{for(const p of [{levels:[]},{levels:[level(25),level(100)]},{levels:[level(0),level(75)]},{levels:[level(0),level(75),level(50),level(100)]},{levels:[level(0),level(25),{...level(50),id:"L26"},level(100)]},{levels:[level(0),level(25,"igual"),level(50," IGUAL "),level(100)]},{levels:[level(0),level(50.5),level(100)]},{levels:[level(0),level(100,"")]}])assert.throws(()=>validateDecisionPlan({...plan,...p}))});
+test("granularidade excepcional e regra explícita docente",()=>{for(const levels of [[0,100],[0,50,100],[0,40,80,100]]){const p={scaleType:levels.length===2?"binary":"teacher",exceptionReason:"Regra específica.",sourceExcerpt:"Fonte original.",levels:levels.map(n=>level(n))};for(const n of levels)assert.equal(resolveDecisionPlan(p,judge(n)).percent,n)}});
+test("equivalência de classificação implica mesma pontuação independentemente da fundamentação",()=>assert.equal(resolveDecisionPlan(plan,{...judge(65),rationale:"Outra evidência válida."}).percent,resolveDecisionPlan(plan,judge(65)).percent));
+
+const rawStandard=()=>({scaleType:"standard",descriptors:Object.fromEntries(STANDARD_LEVELS.map(({key,percent})=>[key,"Evidência específica "+percent]))});
+test("software atribui os sete percentuais a partir dos descritores sem pontuação livre",()=>{const p=buildDecisionPlan(rawStandard());assert.deepEqual(p.levels.map(l=>l.percent),[0,25,50,65,75,90,100]);assert.equal(p.scaleType,"standard");assert.equal(p.exceptionReason,null)});
+test("regressão: rejeita escalas reduzidas observadas na conferência",()=>{for(const levels of [[0,50,75,100],[0,50,75,90,100],[0,25,50,75,90,100],[0,25,50,65,75,100]])assert.throws(()=>validateDecisionPlan({...plan,levels:levels.map(n=>level(n))}),/escala padrão/i)});
+test("não materializa descritores faltantes ou vazios",()=>{for(const key of ["incipient","developing","nearFull"]){const a=rawStandard();delete a.descriptors[key];assert.throws(()=>buildDecisionPlan(a));const b=rawStandard();b.descriptors[key]=" ";assert.throws(()=>buildDecisionPlan(b))}});
+test("não aceita formato antigo como escala padrão",()=>assert.throws(()=>buildDecisionPlan({scaleType:"standard",levels:plan.levels})));
+test("escala excepcional não pode ser silenciosa",()=>{for(const p of [{...plan,scaleType:"teacher",levels:[level(0),level(100)]},{...plan,scaleType:"binary",exceptionReason:"Indivisível.",sourceExcerpt:"Demanda.",levels:[level(0),level(50),level(100)]},{...plan,scaleType:"teacher",exceptionReason:"Regra.",sourceExcerpt:"Fonte."}])assert.throws(()=>validateDecisionPlan(p))});
+test("exceção explicitada mantém a regra de pontuação docente",()=>{const p=buildDecisionPlan({scaleType:"teacher",reason:"Pesos definidos na orientação.",sourceExcerpt:"0%, 40%, 100%",levels:[0,40,100].map(percent=>({percent,description:"Nível "+percent}))});assert.deepEqual(p.levels.map(l=>l.percent),[0,40,100]);assert.equal(resolveDecisionPlan(p,judge(40)).percent,40)});

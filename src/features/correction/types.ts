@@ -1,26 +1,6 @@
-export type CriterionStatus =
-    | "fully_met"
-    | "mostly_met"
-    | "partially_met"
-    | "minimally_met"
-    | "not_met";
-
-export type RubricCriterion = {
-    id: string;
-    description: string;
-    points: number;
-};
-
-export type CriterionAnalysis = {
-    criterionId: string;
-    criterion: string;
-
-    status: CriterionStatus;
-    analysis: string;
-
-    maxPoints: number;
-    awardedPoints: number;
-};
+import type { FinalCriterionAnalysis } from "@/lib/grading/types";
+export type { CriterionStatus, RubricCriterion, PreparedReference, ReferenceCriterion } from "@/lib/grading/types";
+export type CriterionAnalysis = FinalCriterionAnalysis;
 
 export type GradingResult = {
     studentName: string | null;

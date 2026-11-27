@@ -1,0 +1,30 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {referenceSourceHash,validatePreparedReference,prepareReferenceFromModel} from "../src/lib/grading/reference-core.mjs";
+import {plan,calibration} from "./fixtures/structured-decision.mjs";
+const guidance="Identifique três fatores institucionais (1,50 por fator) e analise o conflito.";
+const rubric=[{id:"c1",description:"Identificação de três fatores",points:4.5},{id:"c2",description:"Análise crítica",points:2.5}];
+const row=(id,mode,n)=>({criterionId:id,demand:"Demanda do critério",essentials:["Núcleo solicitado"],equivalents:[],optional:[],mode,expectedCount:n,ambiguity:null,boundary:"Distinguir operação de conteúdo relacionado.",decisionPlan:mode==="qualitative"?plan:null,calibration:mode==="qualitative"?calibration:null});
+const ref={sourceHash:referenceSourceHash(guidance,rubric),criteria:[row("c1","count",3),row("c2","qualitative",null)]};
+test("referência válida e ordenada",()=>assert.deepEqual(validatePreparedReference({...ref,criteria:[...ref.criteria].reverse()},guidance,rubric),ref));
+test("alteração do gabarito invalida referência",()=>assert.throws(()=>validatePreparedReference(ref,guidance+" alterado",rubric)));
+test("alteração do peso invalida referência",()=>assert.throws(()=>validatePreparedReference(ref,guidance,[{...rubric[0],points:3},rubric[1]])));
+test("alteração da descrição invalida referência",()=>assert.throws(()=>validatePreparedReference(ref,guidance,[{...rubric[0],description:"Outro"},rubric[1]])));
+test("IDs duplicados",()=>assert.throws(()=>validatePreparedReference({...ref,criteria:[ref.criteria[0],ref.criteria[0]]},guidance,rubric)));
+test("IDs desconhecidos",()=>assert.throws(()=>validatePreparedReference({...ref,criteria:[ref.criteria[0],row("c3","qualitative",null)]},guidance,rubric)));
+test("contagem inválida",()=>assert.throws(()=>validatePreparedReference({...ref,criteria:[row("c1","count",0),ref.criteria[1]]},guidance,rubric)));
+test("modo qualitativo não admite quantidade",()=>assert.throws(()=>validatePreparedReference({...ref,criteria:[ref.criteria[0],row("c2","qualitative",2)]},guidance,rubric)));
+test("ambiguidade aparece na preparação e bloqueia correção",()=>{const ambiguous={...ref,criteria:[{...ref.criteria[0],ambiguity:"Regra incerta"},ref.criteria[1]]};assert.doesNotThrow(()=>validatePreparedReference(ambiguous,guidance,rubric,true));assert.throws(()=>validatePreparedReference(ambiguous,guidance,rubric));});
+test("pesos desiguais não são silenciosamente aproximados",()=>{const unsupported={...ref,criteria:[{...row("c1","unsupported",null),ambiguity:"Pesos por item desiguais"},ref.criteria[1]]};assert.doesNotThrow(()=>validatePreparedReference(unsupported,guidance,rubric,true));assert.throws(()=>validatePreparedReference(unsupported,guidance,rubric));});
+
+test("referência qualitativa exige plano",()=>assert.throws(()=>validatePreparedReference({...ref,criteria:[ref.criteria[0],{...ref.criteria[1],decisionPlan:null}]},guidance,rubric)));
+test("contagem não recebe plano",()=>assert.throws(()=>validatePreparedReference({...ref,criteria:[{...ref.criteria[0],decisionPlan:plan},ref.criteria[1]]},guidance,rubric)));
+test("fronteira de crédito é obrigatória",()=>assert.throws(()=>validatePreparedReference({...ref,criteria:[{...ref.criteria[0],boundary:""},ref.criteria[1]]},guidance,rubric)));
+
+test("referência gerada contém todos os níveis antes da conferência",()=>{const raw={criteria:[ref.criteria[0],{...ref.criteria[1],decisionPlan:{scaleType:"standard",descriptors:{zero:"Ausência",incipient:"Elemento pontual",partial:"Parte significativa",developing:"Relação incompleta",substantial:"Núcleo com lacuna",nearFull:"Pequena lacuna",full:"Suficiência"}}}]};const prepared=prepareReferenceFromModel(raw,guidance,rubric);assert.deepEqual(prepared.criteria[1].decisionPlan.levels.map(l=>l.percent),[0,25,50,65,75,90,100]);assert.deepEqual(validatePreparedReference(prepared,guidance,rubric),prepared)});
+test("referência não pode omitir 65 ou 90 na escala padrão",()=>{const r={...ref,criteria:[ref.criteria[0],{...ref.criteria[1],decisionPlan:{...plan,levels:plan.levels.filter(l=>l.percent!==65&&l.percent!==90)}}]};assert.throws(()=>validatePreparedReference(r,guidance,rubric,true));assert.throws(()=>validatePreparedReference(r,guidance,rubric))});
+test("exceção exige trecho verificável da fonte",()=>{const exception={scaleType:"binary",exceptionReason:"Demanda indivisível (fixture).",sourceExcerpt:"Trecho inventado.",levels:plan.levels.filter(l=>l.percent===0||l.percent===100)};const r={...ref,criteria:[ref.criteria[0],{...ref.criteria[1],decisionPlan:exception,calibration:null}]};assert.throws(()=>validatePreparedReference(r,guidance,rubric,true),/trecho verificável/);assert.doesNotThrow(()=>validatePreparedReference({...r,criteria:[r.criteria[0],{...r.criteria[1],decisionPlan:{...exception,sourceExcerpt:"Análise crítica"}}]},guidance,rubric,true))});
+
+test("escala padrão exige núcleo e condição de suficiência",()=>{for(const value of [null,{...calibration,core:" "},{...calibration,sufficientEvidence:""}])assert.throws(()=>validatePreparedReference({...ref,criteria:[ref.criteria[0],{...ref.criteria[1],calibration:value}]},guidance,rubric,true))});
+test("complemento obrigatório precisa ter fonte e impacto máximo válidos",()=>{const e={id:"E1",description:"Exigência sintética.",sourceExcerpt:"analise o conflito",maxImpact:"minor",rationale:"Impacto complementar."};const make=comp=>({...ref,criteria:[ref.criteria[0],{...ref.criteria[1],calibration:{...calibration,complementary:comp}}]});assert.doesNotThrow(()=>validatePreparedReference(make([e]),guidance,rubric));for(const comp of [[{...e,sourceExcerpt:"inventado"}],[{...e,maxImpact:"blocking"}],[e,e],[{...e,rationale:""}]])assert.throws(()=>validatePreparedReference(make(comp),guidance,rubric))});
+test("contagem não recebe calibração padrão",()=>assert.throws(()=>validatePreparedReference({...ref,criteria:[{...ref.criteria[0],calibration},ref.criteria[1]]},guidance,rubric)));

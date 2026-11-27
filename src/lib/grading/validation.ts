@@ -1,4 +1,5 @@
 import { GradeError } from "./errors";
+import { validatePreparedReference } from "./reference-core.mjs";
 
 import type {
     GradeRequestData,
@@ -78,7 +79,7 @@ function parseImages(
     return images;
 }
 
-function validateGuidance(
+export function validateGuidance(
     value: FormDataEntryValue | null
     ): string {
     if (
@@ -93,7 +94,7 @@ function validateGuidance(
     return value.trim();
 }
 
-function parseRubric(
+export function parseRubric(
     value: FormDataEntryValue | null
     ): RubricCriterion[] {
     if (typeof value !== "string") {
@@ -168,7 +169,9 @@ function isValidRubricCriterion(
         criterion.description.trim() !== "" &&
         typeof criterion.points === "number" &&
         Number.isFinite(criterion.points) &&
-        criterion.points > 0
+        criterion.points >= 0.01 &&
+        Number.isSafeInteger(Math.round(criterion.points*100)) &&
+        Math.abs(criterion.points*100-Math.round(criterion.points*100))<1e-7
     );
 }
 
@@ -207,9 +210,13 @@ export async function parseGradeRequest(
         formData.get("rubric")
         );
 
-    return {
-        images,
-        guidance,
-        rubric,
-    };
+    let reference: GradeRequestData["reference"];
+    try {
+        const raw = formData.get("reference");
+        if (typeof raw !== "string") throw new Error("Confirme a referência avaliativa antes da correção.");
+        reference=validatePreparedReference(JSON.parse(raw),guidance,rubric);
+    } catch (error) {
+        throw new GradeError(error instanceof Error?error.message:"Referência inválida.");
+    }
+    return {images,guidance,rubric,reference};
 }

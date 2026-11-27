@@ -10,6 +10,7 @@ import type {
     ProcessingError,
     ProgressState,
     RubricCriterion,
+    PreparedReference,
 } from "../types";
 
 import type {
@@ -20,6 +21,7 @@ type RunGroupGradingData = {
     groups: StudentExamGroup[];
     criteria: string;
     rubric: RubricCriterion[];
+    reference: PreparedReference;
 };
 
 type GroupProcessResult = {
@@ -55,6 +57,7 @@ export function useGroupGrading() {
         groups,
         criteria,
         rubric,
+        reference,
     }: RunGroupGradingData) {
         startGrading(
         groups.length
@@ -75,7 +78,8 @@ export function useGroupGrading() {
             await processGroup(
             groups[index],
             criteria,
-            rubric
+            rubric,
+            reference
             );
 
         if (processResult.result) {
@@ -159,14 +163,16 @@ export function useGroupGrading() {
 async function processGroup(
     group: StudentExamGroup,
     criteria: string,
-    rubric: RubricCriterion[]
+    rubric: RubricCriterion[],
+    reference: PreparedReference
     ): Promise<GroupProcessResult> {
     try {
         const result =
         await gradeGroup(
             group,
             criteria,
-            rubric
+            rubric,
+            reference
         );
 
         return {

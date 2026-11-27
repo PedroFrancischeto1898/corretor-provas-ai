@@ -10,12 +10,14 @@ import type {
     ProcessingError,
     ProgressState,
     RubricCriterion,
+    PreparedReference,
 } from "../types";
 
 type RunBatchParams = {
     files: File[];
     criteria: string;
     rubric: RubricCriterion[];
+    reference: PreparedReference;
 };
 
 export function useCorrectionBatch() {
@@ -40,6 +42,7 @@ export function useCorrectionBatch() {
         files,
         criteria,
         rubric,
+        reference,
     }: RunBatchParams) {
         startBatch(files.length);
 
@@ -58,6 +61,7 @@ export function useCorrectionBatch() {
             file: files[index],
             criteria,
             rubric,
+            reference,
             completed,
             failures,
         });
@@ -88,12 +92,14 @@ export function useCorrectionBatch() {
         file,
         criteria,
         rubric,
+        reference,
         completed,
         failures,
     }: {
         file: File;
         criteria: string;
         rubric: RubricCriterion[];
+        reference: PreparedReference;
         completed: CorrectionItem[];
         failures: ProcessingError[];
     }) {
@@ -102,7 +108,8 @@ export function useCorrectionBatch() {
             await gradeFile(
             file,
             criteria,
-            rubric
+            rubric,
+            reference
             );
 
         completed.push(result);
